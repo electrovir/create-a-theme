@@ -1,26 +1,23 @@
 import {filterOutIndexes} from '@augment-vir/common';
 import {Color, VirColorPicker} from '@electrovir/color';
-import {css, defineElement, html, listen} from 'element-vir';
-import {noNativeFormStyles, ViraButton, ViraIcon, X24Icon} from 'vira';
-import {type FrontendState} from '../../data/frontend-state.js';
+import {css, defineElement, defineElementEvent, html, listen} from 'element-vir';
+import {noNativeFormStyles, ViraButton} from 'vira';
+import {type PaletteEntry} from '../../data/palette-entry.js';
 import {createRandomColor} from '../../data/random-color.js';
 import {VirColorPaletteGenerator} from './vir-color-palette-generator.element.js';
-
-const initColors: string[] = [
-    '#e53935', // Red
-    '#ff9800', // Orange
-    '#fdd835', // Yellow
-    '#43a047', // Green
-    '#00bcd4', // Cyan
-    '#2196f3', // Blue
-    '#9c27b0', // Violet
-    '#aeb8bd', // Grey
-];
+import {VirDeleteButton} from './vir-delete-button.element.js';
 
 export const VirCreateTheme = defineElement<{
-    frontendState: Readonly<FrontendState>;
+    colors: ReadonlyArray<string>;
+    /** The current palette entries to display and edit. */
+    paletteEntries: ReadonlyArray<Readonly<PaletteEntry>>;
 }>()({
     tagName: 'vir-create-theme',
+    events: {
+        colorsChange: defineElementEvent<string[]>(),
+        togglePaletteEditor: defineElementEvent<void>(),
+        reset: defineElementEvent<void>(),
+    },
     styles: css`
         :host {
             display: flex;
@@ -68,18 +65,6 @@ export const VirCreateTheme = defineElement<{
                             padding-left: 2px;
                             display: flex;
                             align-items: center;
-
-                            & .remove-button {
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                padding: 6px;
-                                border-radius: 8px;
-
-                                &:hover {
-                                    background-color: #f0f0f0;
-                                }
-                            }
                         }
                     }
                 }
@@ -130,22 +115,12 @@ export const VirCreateTheme = defineElement<{
             }
         }
     `,
-    state({inputs}) {
-        return {
-            startingColors:
-                inputs.frontendState.localStorageClient.get.startingColors() || initColors,
-        };
-    },
-    render({state, updateState, inputs}) {
+    render({inputs, dispatch, events}) {
         function updateColors(newColors: string[]) {
-            updateState({
-                startingColors: newColors,
-            });
-
-            inputs.frontendState.localStorageClient.set.startingColors(newColors);
+            dispatch(new events.colorsChange(newColors));
         }
 
-        const colorPickerTemplates = state.startingColors.map((color, index) => {
+        const colorPickerTemplates = inputs.colors.map((color, index) => {
             return html`
                 <section class="color-column">
                     <div class="color-picker-and-hex-wrapper">
@@ -154,7 +129,7 @@ export const VirCreateTheme = defineElement<{
                                 color,
                             })}
                                 ${listen(VirColorPicker.events.colorChange, (event) => {
-                                    const newColors = state.startingColors.map(
+                                    const newColors = inputs.colors.map(
                                         (startingColor, innerIndex) => {
                                             if (innerIndex === index) {
                                                 return event.detail;
@@ -167,24 +142,18 @@ export const VirCreateTheme = defineElement<{
                                 })}
                             ></${VirColorPicker}>
                             <div class="remove-button-wrapper">
-                                <button
-                                    class="remove-button"
+                                <${VirDeleteButton}
                                     ${listen('click', () => {
-                                        updateColors(
-                                            filterOutIndexes(state.startingColors, [index]),
-                                        );
+                                        updateColors(filterOutIndexes(inputs.colors, [index]));
                                     })}
-                                >
-                                    <${ViraIcon.assign({
-                                        icon: X24Icon,
-                                    })}></${ViraIcon}>
-                                </button>
+                                ></${VirDeleteButton}>
                             </div>
                         </div>
                         <span class="hex-label">${new Color(color).hexString}</span>
                     </div>
                     <${VirColorPaletteGenerator.assign({
                         color,
+                        paletteEntries: inputs.paletteEntries,
                     })}></${VirColorPaletteGenerator}>
                 </section>
             `;
@@ -198,7 +167,7 @@ export const VirCreateTheme = defineElement<{
                     })}
                         ${listen('click', () => {
                             updateColors([
-                                ...state.startingColors,
+                                ...inputs.colors,
                                 createRandomColor(),
                             ]);
                         })}
@@ -207,10 +176,15 @@ export const VirCreateTheme = defineElement<{
                         <button
                             class="small-button"
                             ${listen('click', () => {
-                                inputs.frontendState.localStorageClient.delete.startingColors();
-                                updateState({
-                                    startingColors: initColors,
-                                });
+                                dispatch(new events.togglePaletteEditor());
+                            })}
+                        >
+                            Levels
+                        </button>
+                        <button
+                            class="small-button"
+                            ${listen('click', () => {
+                                dispatch(new events.reset());
                             })}
                         >
                             Reset

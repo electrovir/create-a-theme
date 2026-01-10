@@ -1,59 +1,6 @@
-import {getObjectTypedEntries} from '@augment-vir/common';
 import {Color, VirColorSwatch, calculateContrast} from '@electrovir/color';
 import {css, defineElement, html} from 'element-vir';
-
-const paletteEntries = {
-    5: {
-        /** APCA has a minimum contrast threshold of ~7.5 due to loClip. */
-        whiteContrast: 7,
-        chromaScale: 0.28,
-    },
-    10: {
-        whiteContrast: 15,
-        chromaScale: 0.6,
-    },
-    20: {
-        whiteContrast: 25,
-        chromaScale: 1,
-    },
-    30: {
-        whiteContrast: 35,
-        chromaScale: 1,
-    },
-    40: {
-        whiteContrast: 45,
-        chromaScale: 1,
-    },
-    50: {
-        whiteContrast: 55,
-        chromaScale: 1,
-    },
-    60: {
-        whiteContrast: 65,
-        chromaScale: 1,
-    },
-    70: {
-        whiteContrast: 75,
-        chromaScale: 1,
-    },
-    80: {
-        whiteContrast: 85,
-        chromaScale: 1,
-    },
-    90: {
-        whiteContrast: 95,
-        chromaScale: 1,
-    },
-    100: {
-        whiteContrast: 103,
-        chromaScale: 1,
-    },
-} satisfies Record<number, PaletteEntry>;
-
-type PaletteEntry = {
-    whiteContrast: number;
-    chromaScale: number;
-};
+import {type PaletteEntry} from '../../data/palette-entry.js';
 
 /**
  * Generates a color with the specified lightness that maintains the hue.
@@ -172,23 +119,23 @@ function generateColorAtContrast(
  *
  * @category Internal
  */
-export function generateColorPalette(inputColor: string) {
+export function generateColorPalette(
+    inputColor: string,
+    paletteEntries: ReadonlyArray<Readonly<PaletteEntry>>,
+) {
     const baseColor = new Color(inputColor);
 
-    return getObjectTypedEntries(paletteEntries).map(
-        ([
-            level,
-            paletteEntry,
-        ]) => {
+    return paletteEntries
+        .map((paletteEntry) => {
             const {hexString, contrast} = generateColorAtContrast(baseColor, paletteEntry);
 
             return {
-                level,
+                levelKey: paletteEntry.levelKey,
                 hexString,
                 contrast,
             };
-        },
-    );
+        })
+        .sort((a, b) => a.levelKey - b.levelKey);
 }
 
 /**
@@ -201,6 +148,8 @@ export function generateColorPalette(inputColor: string) {
 export const VirColorPaletteGenerator = defineElement<{
     /** The input color to generate a palette from. */
     color: string;
+    /** The current palette entries to display and edit. */
+    paletteEntries: ReadonlyArray<Readonly<PaletteEntry>>;
 }>()({
     tagName: 'vir-color-palette-generator',
     styles: css`
@@ -237,13 +186,13 @@ export const VirColorPaletteGenerator = defineElement<{
         }
     `,
     render({inputs}) {
-        const palette = generateColorPalette(inputs.color);
+        const palette = generateColorPalette(inputs.color, inputs.paletteEntries);
 
         const swatches = palette.map((entry) => {
             return html`
                 <div class="color-swatch">
                     <div class="labels">
-                        <span>${entry.level}</span>
+                        <span>${entry.levelKey}</span>
                         <span>${entry.hexString}</span>
                         <span>${entry.contrast} Lc</span>
                     </div>
