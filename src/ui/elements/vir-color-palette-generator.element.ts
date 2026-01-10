@@ -2,33 +2,9 @@ import {getObjectTypedEntries} from '@augment-vir/common';
 import {Color, VirColorSwatch, calculateContrast} from '@electrovir/color';
 import {css, defineElement, html} from 'element-vir';
 
-/**
- * Target contrast values for each palette level (against white background). These values are
- * roughly evenly spaced to provide consistent visual steps between darkness levels.
- *
- * Based on APCA contrast values where:
- *
- * - ~15-20 Lc is barely visible
- * - ~90+ Lc is suitable for small body text
- *
- * @category Internal
- */
-export const paletteContrasts = {
-    5: 7,
-    10: 15,
-    20: 25,
-    30: 35,
-    40: 45,
-    50: 55,
-    60: 65,
-    70: 75,
-    80: 85,
-    90: 95,
-};
-export type PaletteLevel = keyof typeof paletteContrasts;
-
 const paletteEntries = {
     5: {
+        /** APCA has a minimum contrast threshold of ~7.5 due to loClip. */
         whiteContrast: 7,
         chromaScale: 0.28,
     },
@@ -68,6 +44,10 @@ const paletteEntries = {
         whiteContrast: 95,
         chromaScale: 1,
     },
+    100: {
+        whiteContrast: 103,
+        chromaScale: 1,
+    },
 } satisfies Record<number, PaletteEntry>;
 
 type PaletteEntry = {
@@ -84,7 +64,7 @@ function generateColorAtContrast(
     baseColor: Readonly<Color>,
     {chromaScale, whiteContrast}: Readonly<PaletteEntry>,
 ) {
-    const color = new Color(baseColor.hex);
+    const color = new Color(baseColor.hexString);
     const baseHue = color.oklch.h;
     const baseChroma = color.oklch.c;
 
@@ -94,7 +74,7 @@ function generateColorAtContrast(
     let minLightness = 0;
     let maxLightness = 1;
     let bestMatch = {
-        hex: color.hex,
+        hexString: color.hexString,
         contrast: 0,
         lightness: color.oklch.l,
     };
@@ -118,7 +98,7 @@ function generateColorAtContrast(
          * Re-parse the hex to get the gamut-mapped color, then try to boost chroma while staying in
          * gamut (but not exceeding our target chroma).
          */
-        const gamutMappedColor = new Color(color.hex);
+        const gamutMappedColor = new Color(color.hexString);
         const currentChroma = gamutMappedColor.oklch.c;
 
         /** Try to find a higher chroma that still produces the same hex (still in gamut). */
@@ -131,7 +111,7 @@ function generateColorAtContrast(
                     h: baseHue,
                 },
             });
-            const testHex = color.hex;
+            const testHex = color.hexString;
             const verifyColor = new Color(testHex);
 
             /** If the color round-trips cleanly, it's in gamut. */
@@ -151,7 +131,7 @@ function generateColorAtContrast(
         });
 
         const contrast = calculateContrast({
-            foreground: color.hex,
+            foreground: color.hexString,
             background: 'white',
         });
 
@@ -161,7 +141,7 @@ function generateColorAtContrast(
             Math.abs(actualContrast - whiteContrast) < Math.abs(bestMatch.contrast - whiteContrast)
         ) {
             bestMatch = {
-                hex: color.hex,
+                hexString: color.hexString,
                 contrast: actualContrast,
                 lightness: midLightness,
             };
@@ -177,10 +157,10 @@ function generateColorAtContrast(
     }
 
     return {
-        hex: bestMatch.hex,
+        hexString: bestMatch.hexString,
         contrast: Math.abs(
             calculateContrast({
-                foreground: bestMatch.hex,
+                foreground: bestMatch.hexString,
                 background: 'white',
             }).contrast,
         ),
@@ -200,11 +180,11 @@ export function generateColorPalette(inputColor: string) {
             level,
             paletteEntry,
         ]) => {
-            const {hex, contrast} = generateColorAtContrast(baseColor, paletteEntry);
+            const {hexString, contrast} = generateColorAtContrast(baseColor, paletteEntry);
 
             return {
                 level,
-                hex,
+                hexString,
                 contrast,
             };
         },
@@ -240,6 +220,7 @@ export const VirColorPaletteGenerator = defineElement<{
 
             & .labels {
                 position: absolute;
+                white-space: nowrap;
                 top: 0;
                 right: 100%;
                 height: 100%;
@@ -263,11 +244,11 @@ export const VirColorPaletteGenerator = defineElement<{
                 <div class="color-swatch">
                     <div class="labels">
                         <span>${entry.level}</span>
-                        <span>${entry.hex}</span>
+                        <span>${entry.hexString}</span>
                         <span>${entry.contrast} Lc</span>
                     </div>
                     <${VirColorSwatch.assign({
-                        backgroundColor: entry.hex,
+                        backgroundColor: entry.hexString,
                     })}></${VirColorSwatch}>
                 </div>
             `;

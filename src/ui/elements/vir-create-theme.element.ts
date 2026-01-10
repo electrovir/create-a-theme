@@ -1,21 +1,20 @@
-import {awaitedForEach, chunkArray, filterOutIndexes} from '@augment-vir/common';
-import {waitForAnimationFrame} from '@augment-vir/web';
+import {filterOutIndexes} from '@augment-vir/common';
 import {Color, VirColorPicker} from '@electrovir/color';
 import {css, defineElement, html, listen} from 'element-vir';
 import {noNativeFormStyles, ViraButton, ViraIcon, X24Icon} from 'vira';
-import {generateEvenlySpreadColors} from '../../data/all-hues.js';
 import {type FrontendState} from '../../data/frontend-state.js';
 import {createRandomColor} from '../../data/random-color.js';
 import {VirColorPaletteGenerator} from './vir-color-palette-generator.element.js';
 
 const initColors: string[] = [
-    '#a2e167',
-    '#7bd5fd',
-    '#1e90ff',
-    '#c34175',
-    '#ff00ff',
-    '#ffdb5f',
-    '#e9b07f',
+    '#e53935', // Red
+    '#ff9800', // Orange
+    '#fdd835', // Yellow
+    '#43a047', // Green
+    '#00bcd4', // Cyan
+    '#2196f3', // Blue
+    '#9c27b0', // Violet
+    '#aeb8bd', // Grey
 ];
 
 export const VirCreateTheme = defineElement<{
@@ -51,30 +50,35 @@ export const VirCreateTheme = defineElement<{
                     color: #444;
                 }
 
-                & .color-picker-wrapper {
-                    position: relative;
+                & .color-picker-and-hex-wrapper {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
+                    gap: 1px;
 
-                    & .remove-button-wrapper {
-                        position: absolute;
-                        top: 0;
-                        left: 100%;
-                        height: 100%;
-                        padding-left: 2px;
+                    & .color-picker-and-delete-button-wrapper {
                         display: flex;
-                        align-items: center;
+                        position: relative;
 
-                        & .remove-button {
+                        & .remove-button-wrapper {
+                            position: absolute;
+                            top: 0;
+                            left: 100%;
+                            height: 100%;
+                            padding-left: 2px;
                             display: flex;
                             align-items: center;
-                            justify-content: center;
-                            padding: 6px;
-                            border-radius: 8px;
 
-                            &:hover {
-                                background-color: #f0f0f0;
+                            & .remove-button {
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                padding: 6px;
+                                border-radius: 8px;
+
+                                &:hover {
+                                    background-color: #f0f0f0;
+                                }
                             }
                         }
                     }
@@ -128,7 +132,6 @@ export const VirCreateTheme = defineElement<{
     `,
     state({inputs}) {
         return {
-            useExamples: false,
             startingColors:
                 inputs.frontendState.localStorageClient.get.startingColors() || initColors,
         };
@@ -145,36 +148,40 @@ export const VirCreateTheme = defineElement<{
         const colorPickerTemplates = state.startingColors.map((color, index) => {
             return html`
                 <section class="color-column">
-                    <div class="color-picker-wrapper">
-                        <${VirColorPicker.assign({
-                            color,
-                        })}
-                            ${listen(VirColorPicker.events.colorChange, (event) => {
-                                const newColors = state.startingColors.map(
-                                    (startingColor, innerIndex) => {
-                                        if (innerIndex === index) {
-                                            return event.detail;
-                                        } else {
-                                            return startingColor;
-                                        }
-                                    },
-                                );
-                                updateColors(newColors);
+                    <div class="color-picker-and-hex-wrapper">
+                        <div class="color-picker-and-delete-button-wrapper">
+                            <${VirColorPicker.assign({
+                                color,
                             })}
-                        ></${VirColorPicker}>
-                        <span class="hex-label">${new Color(color).hex}</span>
-                        <div class="remove-button-wrapper">
-                            <button
-                                class="remove-button"
-                                ${listen('click', () => {
-                                    updateColors(filterOutIndexes(state.startingColors, [index]));
+                                ${listen(VirColorPicker.events.colorChange, (event) => {
+                                    const newColors = state.startingColors.map(
+                                        (startingColor, innerIndex) => {
+                                            if (innerIndex === index) {
+                                                return event.detail;
+                                            } else {
+                                                return startingColor;
+                                            }
+                                        },
+                                    );
+                                    updateColors(newColors);
                                 })}
-                            >
-                                <${ViraIcon.assign({
-                                    icon: X24Icon,
-                                })}></${ViraIcon}>
-                            </button>
+                            ></${VirColorPicker}>
+                            <div class="remove-button-wrapper">
+                                <button
+                                    class="remove-button"
+                                    ${listen('click', () => {
+                                        updateColors(
+                                            filterOutIndexes(state.startingColors, [index]),
+                                        );
+                                    })}
+                                >
+                                    <${ViraIcon.assign({
+                                        icon: X24Icon,
+                                    })}></${ViraIcon}>
+                                </button>
+                            </div>
                         </div>
+                        <span class="hex-label">${new Color(color).hexString}</span>
                     </div>
                     <${VirColorPaletteGenerator.assign({
                         color,
@@ -199,38 +206,10 @@ export const VirCreateTheme = defineElement<{
                     <div class="small-button-wrapper">
                         <button
                             class="small-button"
-                            ${listen('click', async () => {
-                                const colors = generateEvenlySpreadColors(128);
-
-                                updateState({
-                                    startingColors: [],
-                                    useExamples: true,
-                                });
-
-                                const chunks = chunkArray(colors, {
-                                    chunkSize: 2,
-                                });
-
-                                await awaitedForEach(chunks, async (colors) => {
-                                    if (!state.useExamples) {
-                                        return;
-                                    }
-                                    updateState({
-                                        startingColors: state.startingColors.concat(...colors),
-                                    });
-                                    await waitForAnimationFrame();
-                                });
-                            })}
-                        >
-                            Examples
-                        </button>
-                        <button
-                            class="small-button"
                             ${listen('click', () => {
                                 inputs.frontendState.localStorageClient.delete.startingColors();
                                 updateState({
                                     startingColors: initColors,
-                                    useExamples: false,
                                 });
                             })}
                         >
