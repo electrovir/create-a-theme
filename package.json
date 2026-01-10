@@ -42,11 +42,11 @@
         "@augment-vir/assert": "^31.57.5",
         "@augment-vir/common": "^31.57.5",
         "@augment-vir/web": "^31.57.5",
-        "@electrovir/color": "^1.5.3",
-        "@electrovir/local-storage-client": "^0.0.1",
+        "@electrovir/color": "^1.6.0",
+        "@electrovir/local-storage-client": "^0.0.2",
         "element-vir": "^26.14.0",
         "object-shape-tester": "^6.11.0",
-        "vira": "^28.17.0"
+        "vira": "^28.19.0"
     },
     "devDependencies": {
         "@augment-vir/test": "^31.57.5",
@@ -54,7 +54,7 @@
         "@eslint/js": "^9.39.2",
         "@stylistic/eslint-plugin": "^5.6.1",
         "@stylistic/eslint-plugin-ts": "^4.4.1",
-        "@typescript-eslint/eslint-plugin": "^8.51.0",
+        "@typescript-eslint/eslint-plugin": "^8.52.0",
         "@web/dev-server-esbuild": "^1.0.4",
         "@web/test-runner": "^0.20.2",
         "@web/test-runner-commands": "^0.9.0",
@@ -74,7 +74,7 @@
         "eslint-plugin-unicorn": "^62.0.0",
         "istanbul-smart-text-reporter": "^1.1.5",
         "markdown-code-example-inserter": "^3.0.3",
-        "npm-check-updates": "^19.2.0",
+        "npm-check-updates": "^19.3.1",
         "prettier": "~3.3.3",
         "prettier-plugin-interpolated-html-tags": "^2.0.1",
         "prettier-plugin-jsdoc": "^1.8.0",
@@ -85,9 +85,9 @@
         "prettier-plugin-toml": "^2.0.6",
         "typedoc": "^0.28.15",
         "typescript": "^5.9.3",
-        "typescript-eslint": "^8.51.0",
-        "virmator": "^14.4.1",
-        "vite": "^7.3.0"
+        "typescript-eslint": "^8.52.0",
+        "virmator": "^14.4.2",
+        "vite": "^7.3.1"
     },
     "engines": {
         "node": ">=22"
