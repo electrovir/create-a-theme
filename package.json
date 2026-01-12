@@ -42,7 +42,7 @@
         "@augment-vir/assert": "^31.57.5",
         "@augment-vir/common": "^31.57.5",
         "@augment-vir/web": "^31.57.5",
-        "@electrovir/color": "^1.6.3",
+        "@electrovir/color": "^1.6.4",
         "element-vir": "^26.14.0",
         "local-db-client": "^0.0.2",
         "object-shape-tester": "^6.11.0",
