@@ -1,10 +1,11 @@
 export const initColors: string[] = [
-    '#e53935', // Red
+    '#f9163a', // Red
     '#ff9800', // Orange
     '#fdd835', // Yellow
-    '#43a047', // Green
-    '#00bcd4', // Cyan
+    '#43b447', // Green
+    '#4ce6cc', // Cyan
     '#2196f3', // Blue
-    '#9c27b0', // Violet
+    '#a154ff', // Violet
+    '#fa82cc', // Pink
     '#aeb8bd', // Grey
 ];
