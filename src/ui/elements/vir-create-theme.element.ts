@@ -1,8 +1,8 @@
-import {filterObject, filterOutIndexes} from '@augment-vir/common';
+import {filterObject, filterOutIndexes, sortObject} from '@augment-vir/common';
 import {Color, VirColorPicker} from '@electrovir/color';
 import {css, defineElement, defineElementEvent, html, listen} from 'element-vir';
 import {noNativeFormStyles, ViraButton} from 'vira';
-import {generateCode, type SwatchMap} from '../../data/generate-colde.js';
+import {generateCode, type SwatchMap} from '../../data/generate-code.js';
 import {type PaletteEntry} from '../../data/palette-entry.js';
 import {createRandomColor} from '../../data/random-color.js';
 import {VirColorPaletteGenerator} from './vir-color-palette-generator.element.js';
@@ -16,18 +16,19 @@ export const VirCreateTheme = defineElement<{
     tagName: 'vir-create-theme',
     state() {
         return {
-            latestGeneration: {} as Readonly<SwatchMap>,
+            latestGeneratedPalette: {} as Readonly<SwatchMap>,
         };
     },
     events: {
         colorsChange: defineElementEvent<string[]>(),
         togglePaletteEditor: defineElementEvent<void>(),
         reset: defineElementEvent<void>(),
+        generateTheme: defineElementEvent<Readonly<SwatchMap>>(),
     },
     styles: css`
         :host {
             display: flex;
-            gap: 16px;
+            gap: 32px;
             align-items: flex-start;
         }
 
@@ -127,16 +128,16 @@ export const VirCreateTheme = defineElement<{
         }
 
         /** Remove keyed colors that aren't in use anymore. */
-        const filteredLatestGeneration = filterObject(state.latestGeneration, (key) => {
+        const filteredLatestGeneration = filterObject(state.latestGeneratedPalette, (key) => {
             return inputs.colors.includes(key);
-        }) as typeof state.latestGeneration;
+        }) as typeof state.latestGeneratedPalette;
 
         if (
             Object.keys(filteredLatestGeneration).length !==
-            Object.keys(state.latestGeneration).length
+            Object.keys(state.latestGeneratedPalette).length
         ) {
             updateState({
-                latestGeneration: filteredLatestGeneration,
+                latestGeneratedPalette: filteredLatestGeneration,
             });
         }
 
@@ -176,11 +177,18 @@ export const VirCreateTheme = defineElement<{
                         paletteEntries: inputs.paletteEntries,
                     })}
                         ${listen(VirColorPaletteGenerator.events.paletteCreate, (event) => {
+                            const newGeneration = {
+                                ...state.latestGeneratedPalette,
+                                [color]: event.detail,
+                            };
+
                             updateState({
-                                latestGeneration: {
-                                    ...state.latestGeneration,
-                                    [color]: event.detail,
-                                },
+                                latestGeneratedPalette: sortObject(newGeneration, (a, b) => {
+                                    return (
+                                        inputs.colors.indexOf(String(a.key)) -
+                                        inputs.colors.indexOf(String(b.key))
+                                    );
+                                }),
                             });
                         })}
                     ></${VirColorPaletteGenerator}>
@@ -204,9 +212,17 @@ export const VirCreateTheme = defineElement<{
                     <div class="small-button-wrapper">
                         <button
                             class="small-button"
+                            ${listen('click', () => {
+                                dispatch(new events.generateTheme(state.latestGeneratedPalette));
+                            })}
+                        >
+                            Generate Theme
+                        </button>
+                        <button
+                            class="small-button"
                             ${listen('click', async () => {
                                 await globalThis.navigator.clipboard.writeText(
-                                    generateCode(state.latestGeneration),
+                                    generateCode('vir', state.latestGeneratedPalette),
                                 );
                             })}
                         >

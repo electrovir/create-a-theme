@@ -52,11 +52,6 @@ export const defaultPaletteEntries = [
         whiteContrast: 95,
         chromaScale: 1,
     },
-    {
-        levelKey: 100,
-        whiteContrast: 104,
-        chromaScale: 1,
-    },
 ] satisfies PaletteEntry[];
 
 export const paletteEntryShape = defineShape({
