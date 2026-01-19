@@ -42,14 +42,14 @@
         "@augment-vir/assert": "^31.59.0",
         "@augment-vir/common": "^31.59.0",
         "@augment-vir/web": "^31.59.0",
-        "@electrovir/color": "^1.7.0",
-        "element-book": "^26.15.1",
-        "element-vir": "^26.14.1",
-        "lit-css-vars": "^3.0.11",
+        "@electrovir/color": "^1.7.6",
+        "element-book": "^26.15.3",
+        "element-vir": "^26.14.3",
+        "lit-css-vars": "^3.2.2",
         "local-db-client": "^0.0.2",
         "object-shape-tester": "^6.11.0",
-        "theme-vir": "^28.18.2",
-        "vira": "^28.19.5"
+        "theme-vir": "^28.18.5",
+        "vira": "^28.19.7"
     },
     "devDependencies": {
         "@augment-vir/test": "^31.59.0",
