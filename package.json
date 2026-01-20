@@ -48,7 +48,7 @@
         "lit-css-vars": "^3.3.0",
         "local-db-client": "^0.0.2",
         "object-shape-tester": "^6.11.0",
-        "theme-vir": "^28.18.5",
+        "theme-vir": "^28.18.6",
         "vira": "^29.0.0"
     },
     "devDependencies": {
