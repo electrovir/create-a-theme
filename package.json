@@ -39,20 +39,20 @@
         "test:update": "npm test update"
     },
     "dependencies": {
-        "@augment-vir/assert": "^31.59.0",
-        "@augment-vir/common": "^31.59.0",
-        "@augment-vir/web": "^31.59.0",
+        "@augment-vir/assert": "^31.59.1",
+        "@augment-vir/common": "^31.59.1",
+        "@augment-vir/web": "^31.59.1",
         "@electrovir/color": "^1.7.8",
         "element-book": "^26.16.0",
         "element-vir": "^26.14.3",
         "lit-css-vars": "^3.4.0",
         "local-db-client": "^0.0.2",
         "object-shape-tester": "^6.11.0",
-        "theme-vir": "^28.18.7",
-        "vira": "^29.2.1"
+        "theme-vir": "^28.19.0",
+        "vira": "^29.2.2"
     },
     "devDependencies": {
-        "@augment-vir/test": "^31.59.0",
+        "@augment-vir/test": "^31.59.1",
         "@eslint/eslintrc": "^3.3.3",
         "@eslint/js": "^9.39.2",
         "@stylistic/eslint-plugin": "^5.7.1",
