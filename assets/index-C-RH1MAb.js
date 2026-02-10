@@ -2223,9 +2223,9 @@ ${we(1)}},
 );`}function we(e){return"    ".repeat(e)}function ko(e,r){if(typeof e!=typeof r)return!1;const t=x.isString(e)||e instanceof dn?String(e):JSON.stringify(e),n=x.isString(r)||r instanceof dn?String(r):JSON.stringify(r);return t===n}function UO(e){const r=e.match(/^var\(--([^,)]+)/);return r?r[1]:void 0}function rs(e,r,t){if(typeof e=="string")return`'${e}'`;if(typeof e=="number")return String(e);if(e instanceof dn){const n=String(e);if(t){const o=UO(n);if(o)return`${t}['${o}']`}return`css\`${n}\``}else if("refBackground"in e||"refForeground"in e||"refDefaultBackground"in e||"refDefaultForeground"in e){const n=[];return"refForeground"in e&&n.push(`${we(r+1)}refForeground: '${e.refForeground}',`),"refBackground"in e&&n.push(`${we(r+1)}refBackground: '${e.refBackground}',`),"refDefaultForeground"in e&&n.push(`${we(r+1)}refDefaultForeground: true,`),"refDefaultBackground"in e&&n.push(`${we(r+1)}refDefaultBackground: true,`),`{
 ${n.join(`
 `)}
-${we(r)}}`}else return`'${e.default}'`}function x$(e,r,t,n){const o=[];return"foreground"in e&&(!t||!ko(e.foreground,t.foreground))&&(t&&ko(e.foreground,t.background)?o.push(`${we(r+1)}foreground: {
+${we(r)}}`}else return`'${e.default}'`}function x$(e,r,t,n){const o=[];return"foreground"in e&&(!t||!ko(e.foreground,t.foreground))&&!x.hasKey(e.foreground,"refDefaultForeground")&&(t&&ko(e.foreground,t.background)?o.push(`${we(r+1)}foreground: {
 ${we(r+2)}refDefaultBackground: true,
-${we(r+1)}},`):o.push(`${we(r+1)}foreground: ${rs(e.foreground,r+1,n)},`)),"background"in e&&(!t||!ko(e.background,t.background))&&(t&&ko(e.background,t.foreground)?o.push(`${we(r+1)}background: {
+${we(r+1)}},`):o.push(`${we(r+1)}foreground: ${rs(e.foreground,r+1,n)},`)),"background"in e&&(!t||!ko(e.background,t.background))&&!x.hasKey(e.background,"refDefaultBackground")&&(t&&ko(e.background,t.foreground)?o.push(`${we(r+1)}background: {
 ${we(r+2)}refDefaultForeground: true,
 ${we(r+1)}},`):o.push(`${we(r+1)}background: ${rs(e.background,r+1,n)},`)),`${we(r)}{
 ${o.join(`
