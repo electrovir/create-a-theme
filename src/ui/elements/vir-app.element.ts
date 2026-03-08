@@ -1,10 +1,12 @@
 import {type BookPage, ElementBookApp} from 'element-book';
-import {asyncProp, css, defineElement, html, listen, nothing, renderAsync} from 'element-vir';
+import {css, defineElement, html, listen, nothing} from 'element-vir';
 import {createColorThemeBookPages} from 'theme-vir';
-import {LoaderAnimated24Icon, ViraIcon} from 'vira';
 import {generateColorThemeFromSwatchMap} from '../../data/generate-code.js';
 import {initColors} from '../../data/init-colors.js';
-import {createAppDbClient} from '../../data/local-db.client.js';
+import {
+    type AppLocalStorageClient,
+    createAppLocalStorageClient,
+} from '../../data/local-storage.client.js';
 import {defaultPaletteEntries} from '../../data/palette-entry.js';
 import {VirCreateTheme} from './vir-create-theme.element.js';
 import {VirPaletteEditor} from './vir-palette-editor.element.js';
@@ -25,124 +27,97 @@ export const VirApp = defineElement()({
             font-family: sans-serif;
             gap: 16px;
         }
-
-        .loading-icon {
-            margin: 32px;
-        }
     `,
     state() {
-        const appDbClient = createAppDbClient();
+        const appLocalStorageClient = createAppLocalStorageClient();
 
         return {
-            appDbClient,
+            appDbClient: appLocalStorageClient,
             colorThemePages: [] as BookPage[],
-            storedData: asyncProp({
-                defaultValue: appDbClient.getAllValues().then((allValues) => {
-                    allValues.paletteEntries?.sort((a, b) => a.levelKey - b.levelKey);
-
-                    return allValues;
-                }),
-            }),
+            storedData: getStoredData(appLocalStorageClient),
         };
     },
     render({state, updateState}) {
-        return renderAsync(
-            state.storedData,
-            html`
-                <${ViraIcon.assign({
-                    icon: LoaderAnimated24Icon,
+        const storedData = state.storedData;
+        const paletteEntries = storedData.paletteEntries || defaultPaletteEntries;
+
+        return html`
+            <section class="palette-generator">
+                ${storedData.showPaletteEditor
+                    ? html`
+                          <${VirPaletteEditor.assign({
+                              paletteEntries,
+                          })}
+                              ${listen(VirPaletteEditor.events.paletteEntriesChange, (event) => {
+                                  state.appDbClient.set.paletteEntries(event.detail);
+                                  updateState({
+                                      storedData: getStoredData(state.appDbClient),
+                                  });
+                              })}
+                          ></${VirPaletteEditor}>
+                      `
+                    : nothing}
+                <${VirCreateTheme.assign({
+                    paletteEntries,
+                    colors: storedData.colors || initColors,
                 })}
-                    class="loading-icon"
-                ></${ViraIcon}>
-            `,
-            (storedData) => {
-                const paletteEntries = storedData.paletteEntries || defaultPaletteEntries;
+                    ${listen(VirCreateTheme.events.colorsChange, (event) => {
+                        state.appDbClient.set.colors(event.detail);
+                        updateState({
+                            storedData: getStoredData(state.appDbClient),
+                        });
+                    })}
+                    ${listen(VirCreateTheme.events.generateTheme, (event) => {
+                        const {darkOverride, defaultLight} = generateColorThemeFromSwatchMap(
+                            'vir',
+                            event.detail,
+                        );
 
-                return html`
-                    <section class="palette-generator">
-                        ${storedData.showPaletteEditor
-                            ? html`
-                                  <${VirPaletteEditor.assign({
-                                      paletteEntries,
-                                  })}
-                                      ${listen(
-                                          VirPaletteEditor.events.paletteEntriesChange,
-                                          (event) => {
-                                              state.storedData.setValue({
-                                                  ...storedData,
-                                                  paletteEntries: event.detail,
-                                              });
+                        const colorThemePages = createColorThemeBookPages({
+                            theme: defaultLight,
+                            title: 'Theme',
+                            hideInverseColors: true,
+                            parent: undefined,
+                            overrides: [
+                                darkOverride,
+                            ],
+                            hideCopyCode: true,
+                        });
 
-                                              void state.appDbClient.set.paletteEntries(
-                                                  event.detail,
-                                              );
-                                          },
-                                      )}
-                                  ></${VirPaletteEditor}>
-                              `
-                            : nothing}
-                        <${VirCreateTheme.assign({
-                            paletteEntries,
-                            colors: storedData.colors || initColors,
-                        })}
-                            ${listen(VirCreateTheme.events.colorsChange, async (event) => {
-                                state.storedData.setValue({
-                                    ...storedData,
-                                    colors: event.detail,
-                                });
-
-                                await state.appDbClient.set.colors(event.detail);
-                            })}
-                            ${listen(VirCreateTheme.events.generateTheme, (event) => {
-                                const {darkOverride, defaultLight} =
-                                    generateColorThemeFromSwatchMap('vir', event.detail);
-
-                                const colorThemePages = createColorThemeBookPages({
-                                    theme: defaultLight,
-                                    title: 'Theme',
-                                    hideInverseColors: true,
-                                    parent: undefined,
-                                    overrides: [
-                                        darkOverride,
-                                    ],
-                                    hideCopyCode: true,
-                                });
-
-                                updateState({
-                                    colorThemePages,
-                                });
-                            })}
-                            ${listen(VirCreateTheme.events.togglePaletteEditor, async () => {
-                                const showPaletteEditor = !storedData.showPaletteEditor;
-
-                                state.storedData.setValue({
-                                    ...storedData,
-                                    showPaletteEditor,
-                                });
-
-                                await state.appDbClient.set.showPaletteEditor(showPaletteEditor);
-                            })}
-                            ${listen(VirCreateTheme.events.reset, async () => {
-                                const showPaletteEditor = !!storedData.showPaletteEditor;
-                                state.storedData.setValue({
-                                    showPaletteEditor,
-                                });
-
-                                await state.appDbClient.clear();
-                                await state.appDbClient.set.showPaletteEditor(showPaletteEditor);
-                            })}
-                        ></${VirCreateTheme}>
-                    </section>
-                    ${state.colorThemePages.length
-                        ? html`
-                              <${ElementBookApp.assign({
-                                  pages: state.colorThemePages,
-                                  blockNavigation: true,
-                              })}></${ElementBookApp}>
-                          `
-                        : nothing}
-                `;
-            },
-        );
+                        updateState({
+                            colorThemePages,
+                        });
+                    })}
+                    ${listen(VirCreateTheme.events.togglePaletteEditor, () => {
+                        state.appDbClient.set.showPaletteEditor(!storedData.showPaletteEditor);
+                        updateState({
+                            storedData: getStoredData(state.appDbClient),
+                        });
+                    })}
+                    ${listen(VirCreateTheme.events.reset, () => {
+                        const showPaletteEditor = !!storedData.showPaletteEditor;
+                        state.appDbClient.clear();
+                        state.appDbClient.set.showPaletteEditor(showPaletteEditor);
+                        updateState({
+                            storedData: getStoredData(state.appDbClient),
+                        });
+                    })}
+                ></${VirCreateTheme}>
+            </section>
+            ${state.colorThemePages.length
+                ? html`
+                      <${ElementBookApp.assign({
+                          pages: state.colorThemePages,
+                          blockNavigation: true,
+                      })}></${ElementBookApp}>
+                  `
+                : nothing}
+        `;
     },
 });
+
+function getStoredData(appDbClient: AppLocalStorageClient) {
+    const allValues = appDbClient.getAllValues();
+    allValues.paletteEntries?.sort((a, b) => a.levelKey - b.levelKey);
+    return allValues;
+}

@@ -43,10 +43,10 @@
         "@augment-vir/common": "^31.68.1",
         "@augment-vir/web": "^31.68.1",
         "@electrovir/color": "^1.7.8",
+        "@electrovir/local-storage-client": "^0.1.0",
         "element-book": "^26.17.0",
         "element-vir": "^26.14.6",
         "lit-css-vars": "^3.6.2",
-        "local-db-client": "^1.0.0",
         "object-shape-tester": "^6.11.0",
         "theme-vir": "^28.22.0",
         "vira": "^31.3.0"
