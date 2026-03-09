@@ -36,8 +36,6 @@ export function generateCode(cssVarPrefix: string, generatedPalette: Readonly<Sw
         generatedPalette,
     );
 
-    console.log(darkOverride);
-
     const themeCode = generateThemeCode(defaultLight, {
         paletteVarName: colorPaletteVarName,
         overrides: [darkOverride],
@@ -92,8 +90,6 @@ export function generateColorThemeFromSwatchMap(
     generatedPalette: Readonly<SwatchMap>,
 ) {
     const paletteVars = generatePaletteCssVars(cssVarPrefix, generatedPalette);
-
-    console.log(paletteVars);
 
     return buildColorTheme(paletteVars);
 }

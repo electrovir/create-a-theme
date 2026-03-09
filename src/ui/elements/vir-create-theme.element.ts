@@ -1,9 +1,12 @@
+import {assertWrap} from '@augment-vir/assert';
 import {filterObject, filterOutIndexes, sortObject} from '@augment-vir/common';
+import {extractEventTarget} from '@augment-vir/web';
 import {Color, VirColorPicker} from '@electrovir/color';
 import {css, defineElement, defineElementEvent, html, listen} from 'element-vir';
-import {noNativeFormStyles, ViraButton} from 'vira';
+import {ViraButton, ViraColorVariant, ViraEmphasis, ViraInput, ViraSize} from 'vira';
 import {generateCode, type SwatchMap} from '../../data/generate-code.js';
 import {type PaletteEntry} from '../../data/palette-entry.js';
+import {parseColorJson, type ParsedColorJson} from '../../data/parse-color-json.js';
 import {createRandomColor} from '../../data/random-color.js';
 import {VirColorPaletteGenerator} from './vir-color-palette-generator.element.js';
 import {VirDeleteButton} from './vir-delete-button.element.js';
@@ -17,6 +20,7 @@ export const VirCreateTheme = defineElement<{
     state() {
         return {
             latestGeneratedPalette: {} as Readonly<SwatchMap>,
+            pastedSwatchMap: undefined as Readonly<SwatchMap> | undefined,
         };
     },
     events: {
@@ -24,17 +28,13 @@ export const VirCreateTheme = defineElement<{
         togglePaletteEditor: defineElementEvent<void>(),
         reset: defineElementEvent<void>(),
         generateTheme: defineElementEvent<Readonly<SwatchMap>>(),
+        jsonPaste: defineElementEvent<ParsedColorJson>(),
     },
     styles: css`
         :host {
             display: flex;
             gap: 32px;
             align-items: flex-start;
-        }
-
-        button {
-            ${noNativeFormStyles}
-            cursor: pointer;
         }
 
         .color-pickers {
@@ -78,6 +78,11 @@ export const VirCreateTheme = defineElement<{
             }
         }
 
+        ${ViraInput} {
+            text-align: center;
+            width: 80px;
+        }
+
         .button-height-wrapper {
             display: flex;
             position: relative;
@@ -101,23 +106,23 @@ export const VirCreateTheme = defineElement<{
                     top: 100%;
                     left: 0;
                     width: 100%;
+                    box-sizing: border-box;
                     display: flex;
                     flex-direction: column;
                     gap: 10px;
                     align-items: center;
                     padding-top: 12px;
+                }
+            }
 
-                    & .small-button {
-                        opacity: 0.4;
-                        background-color: #ddd;
-                        padding: 4px 8px;
-                        border-radius: 8px;
-                        text-align: center;
+            &.pasted {
+                & .placeholder-picker {
+                    display: none;
+                }
 
-                        &:hover {
-                            opacity: 1;
-                        }
-                    }
+                & .button-width-wrapper .small-button-wrapper {
+                    position: static;
+                    padding-top: 0;
                 }
             }
         }
@@ -141,40 +146,49 @@ export const VirCreateTheme = defineElement<{
             });
         }
 
+        const hasPastedTheme = state.pastedSwatchMap != undefined;
+
         const colorPickerTemplates = inputs.colors.map((color, index) => {
             return html`
                 <section class="color-column">
-                    <div class="color-picker-and-hex-wrapper">
-                        <div class="color-picker-and-delete-button-wrapper">
-                            <${VirColorPicker.assign({
-                                color,
-                            })}
-                                ${listen(VirColorPicker.events.colorChange, (event) => {
-                                    const newColors = inputs.colors.map(
-                                        (startingColor, innerIndex) => {
-                                            if (innerIndex === index) {
-                                                return event.detail;
-                                            } else {
-                                                return startingColor;
-                                            }
-                                        },
-                                    );
-                                    updateColors(newColors);
-                                })}
-                            ></${VirColorPicker}>
-                            <div class="remove-button-wrapper">
-                                <${VirDeleteButton}
-                                    ${listen('click', () => {
-                                        updateColors(filterOutIndexes(inputs.colors, [index]));
-                                    })}
-                                ></${VirDeleteButton}>
-                            </div>
-                        </div>
-                        <span class="hex-label">${new Color(color).hexString}</span>
-                    </div>
+                    ${hasPastedTheme
+                        ? ''
+                        : html`
+                              <div class="color-picker-and-hex-wrapper">
+                                  <div class="color-picker-and-delete-button-wrapper">
+                                      <${VirColorPicker.assign({
+                                          color,
+                                      })}
+                                          ${listen(VirColorPicker.events.colorChange, (event) => {
+                                              const newColors = inputs.colors.map(
+                                                  (startingColor, innerIndex) => {
+                                                      if (innerIndex === index) {
+                                                          return event.detail;
+                                                      } else {
+                                                          return startingColor;
+                                                      }
+                                                  },
+                                              );
+                                              updateColors(newColors);
+                                          })}
+                                      ></${VirColorPicker}>
+                                      <div class="remove-button-wrapper">
+                                          <${VirDeleteButton}
+                                              ${listen('click', () => {
+                                                  updateColors(
+                                                      filterOutIndexes(inputs.colors, [index]),
+                                                  );
+                                              })}
+                                          ></${VirDeleteButton}>
+                                      </div>
+                                  </div>
+                                  <span class="hex-label">${new Color(color).hexString}</span>
+                              </div>
+                          `}
                     <${VirColorPaletteGenerator.assign({
                         color,
                         paletteEntries: inputs.paletteEntries,
+                        precomputedPalette: state.pastedSwatchMap?.[color],
                     })}
                         ${listen(VirColorPaletteGenerator.events.paletteCreate, (event) => {
                             const newGeneration = {
@@ -197,53 +211,92 @@ export const VirCreateTheme = defineElement<{
         });
 
         return html`
-            <div class="button-height-wrapper">
+            <div class="button-height-wrapper ${hasPastedTheme ? 'pasted' : ''}">
                 <div class="button-width-wrapper">
-                    <${ViraButton.assign({
-                        text: 'Add color ＋',
-                    })}
-                        ${listen('click', () => {
-                            updateColors([
-                                ...inputs.colors,
-                                createRandomColor(),
-                            ]);
-                        })}
-                    ></${ViraButton}>
+                    ${hasPastedTheme
+                        ? ''
+                        : html`
+                              <${ViraButton.assign({
+                                  text: 'Add color ＋',
+                              })}
+                                  ${listen('click', () => {
+                                      updateColors([
+                                          ...inputs.colors,
+                                          createRandomColor(),
+                                      ]);
+                                  })}
+                              ></${ViraButton}>
+                          `}
                     <div class="small-button-wrapper">
-                        <button
-                            class="small-button"
+                        <${ViraButton.assign({
+                            text: 'Generate Theme',
+                            buttonEmphasis: ViraEmphasis.Subtle,
+                            colorVariant: ViraColorVariant.Neutral,
+                            buttonSize: ViraSize.Small,
+                        })}
                             ${listen('click', () => {
                                 dispatch(new events.generateTheme(state.latestGeneratedPalette));
                             })}
-                        >
-                            Generate Theme
-                        </button>
-                        <button
-                            class="small-button"
+                        ></${ViraButton}>
+                        <${ViraButton.assign({
+                            text: 'Copy Code',
+                            buttonEmphasis: ViraEmphasis.Subtle,
+                            colorVariant: ViraColorVariant.Neutral,
+                            buttonSize: ViraSize.Small,
+                        })}
                             ${listen('click', async () => {
-                                await globalThis.navigator.clipboard.writeText(
-                                    generateCode('vir', state.latestGeneratedPalette),
-                                );
+                                const code = generateCode('vir', state.latestGeneratedPalette);
+                                try {
+                                    await globalThis.navigator.clipboard.writeText(code);
+                                } catch (error) {
+                                    console.error(error);
+                                    console.info(code);
+                                }
                             })}
-                        >
-                            Copy Code
-                        </button>
-                        <button
-                            class="small-button"
+                        ></${ViraButton}>
+                        <${ViraButton.assign({
+                            text: 'Levels',
+                            buttonEmphasis: ViraEmphasis.Subtle,
+                            colorVariant: ViraColorVariant.Neutral,
+                            buttonSize: ViraSize.Small,
+                        })}
                             ${listen('click', () => {
                                 dispatch(new events.togglePaletteEditor());
                             })}
-                        >
-                            Levels
-                        </button>
-                        <button
-                            class="small-button"
+                        ></${ViraButton}>
+                        <${ViraButton.assign({
+                            text: 'Reset',
+                            buttonEmphasis: ViraEmphasis.Subtle,
+                            colorVariant: ViraColorVariant.Danger,
+                            buttonSize: ViraSize.Small,
+                        })}
                             ${listen('click', () => {
                                 dispatch(new events.reset());
                             })}
-                        >
-                            Reset
-                        </button>
+                        ></${ViraButton}>
+                        <${ViraInput.assign({
+                            value: '',
+                            placeholder: 'Paste',
+                        })}
+                            ${listen(ViraInput.events.valueChange, (event) => {
+                                const rawJson = event.detail;
+                                if (!rawJson) {
+                                    return;
+                                }
+
+                                const parsed = parseColorJson(JSON.parse(rawJson));
+                                updateState({
+                                    pastedSwatchMap: parsed.swatchMap,
+                                    latestGeneratedPalette: parsed.swatchMap,
+                                });
+                                dispatch(new events.jsonPaste(parsed));
+                                const element = extractEventTarget(event, ViraInput);
+                                assertWrap.instanceOf(
+                                    element.shadowRoot.querySelector('input'),
+                                    HTMLInputElement,
+                                ).value = '';
+                            })}
+                        ></${ViraInput}>
                     </div>
                 </div>
                 <${VirColorPicker.assign({

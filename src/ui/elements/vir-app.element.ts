@@ -7,7 +7,7 @@ import {
     type AppLocalStorageClient,
     createAppLocalStorageClient,
 } from '../../data/local-storage.client.js';
-import {defaultPaletteEntries} from '../../data/palette-entry.js';
+import {defaultPaletteEntries, type PaletteEntry} from '../../data/palette-entry.js';
 import {VirCreateTheme} from './vir-create-theme.element.js';
 import {VirPaletteEditor} from './vir-palette-editor.element.js';
 
@@ -22,7 +22,7 @@ export const VirApp = defineElement()({
         }
 
         .palette-generator {
-            padding: 32px;
+            padding: 16px;
             display: flex;
             font-family: sans-serif;
             gap: 16px;
@@ -35,11 +35,13 @@ export const VirApp = defineElement()({
             appDbClient: appLocalStorageClient,
             colorThemePages: [] as BookPage[],
             storedData: getStoredData(appLocalStorageClient),
+            pastedPaletteEntries: undefined as PaletteEntry[] | undefined,
         };
     },
     render({state, updateState}) {
         const storedData = state.storedData;
-        const paletteEntries = storedData.paletteEntries || defaultPaletteEntries;
+        const paletteEntries =
+            state.pastedPaletteEntries || storedData.paletteEntries || defaultPaletteEntries;
 
         return html`
             <section class="palette-generator">
@@ -100,6 +102,20 @@ export const VirApp = defineElement()({
                         state.appDbClient.set.showPaletteEditor(showPaletteEditor);
                         updateState({
                             storedData: getStoredData(state.appDbClient),
+                            pastedPaletteEntries: undefined,
+                        });
+                    })}
+                    ${listen(VirCreateTheme.events.jsonPaste, (event) => {
+                        const {swatchMap, paletteEntries: parsedEntries} = event.detail;
+
+                        const colors = Object.keys(swatchMap);
+
+                        state.appDbClient.set.colors(colors);
+                        state.appDbClient.set.paletteEntries(parsedEntries);
+
+                        updateState({
+                            storedData: getStoredData(state.appDbClient),
+                            pastedPaletteEntries: parsedEntries,
                         });
                     })}
                 ></${VirCreateTheme}>

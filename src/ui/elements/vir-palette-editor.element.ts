@@ -99,7 +99,7 @@ export const VirPaletteEditor = defineElement<{
                         <input
                             type="number"
                             .value=${String(paletteEntry.whiteContrast)}
-                            min="7"
+                            min="0"
                             max="108"
                             step="1"
                             ${listen('input', async (event) => {
@@ -116,6 +116,18 @@ export const VirPaletteEditor = defineElement<{
                             step="0.01"
                             ${listen('input', async (event) => {
                                 await updateEntry('chromaScale', event);
+                            })}
+                        />
+                    </td>
+                    <td>
+                        <input
+                            type="number"
+                            .value=${String(paletteEntry.targetLightness)}
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            ${listen('input', async (event) => {
+                                await updateEntry('targetLightness', event);
                             })}
                         />
                     </td>
@@ -141,6 +153,7 @@ export const VirPaletteEditor = defineElement<{
                         <th>Level</th>
                         <th>White Contrast</th>
                         <th>Chroma Scale</th>
+                        <th>Target Lightness</th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
@@ -156,6 +169,7 @@ export const VirPaletteEditor = defineElement<{
                                 chromaScale: 1,
                                 levelKey: -1,
                                 whiteContrast: 50,
+                                targetLightness: 0,
                             },
                         ]),
                     );

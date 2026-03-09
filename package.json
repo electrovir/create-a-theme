@@ -48,12 +48,12 @@
         "element-vir": "^26.14.6",
         "lit-css-vars": "^3.6.2",
         "object-shape-tester": "^6.11.0",
-        "theme-vir": "^28.22.0",
-        "vira": "^31.3.0"
+        "theme-vir": "^28.23.0",
+        "vira": "^31.4.1"
     },
     "devDependencies": {
         "@augment-vir/test": "^31.68.1",
-        "@eslint/eslintrc": "^3.3.3",
+        "@eslint/eslintrc": "^3.3.5",
         "@eslint/js": "^9.39.2",
         "@stylistic/eslint-plugin": "^5.10.0",
         "@stylistic/eslint-plugin-ts": "^4.4.1",

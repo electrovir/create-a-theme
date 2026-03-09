@@ -15,6 +15,8 @@ export const VirColorPaletteGenerator = defineElement<{
     color: string;
     /** The current palette entries to display and edit. */
     paletteEntries: ReadonlyArray<Readonly<PaletteEntry>>;
+    /** When provided, these swatches are displayed directly instead of running the generator. */
+    precomputedPalette: GeneratedPaletteSwatch[] | undefined;
 }>()({
     tagName: 'vir-color-palette-generator',
     events: {
@@ -54,7 +56,8 @@ export const VirColorPaletteGenerator = defineElement<{
         }
     `,
     render({inputs, dispatch, events}) {
-        const palette = generateColorPalette(inputs.color, inputs.paletteEntries);
+        const palette =
+            inputs.precomputedPalette || generateColorPalette(inputs.color, inputs.paletteEntries);
 
         const swatches = palette.map((entry) => {
             return html`

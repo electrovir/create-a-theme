@@ -2,6 +2,39 @@ import {Color, calculateContrast} from '@electrovir/color';
 import {type PaletteEntry} from './palette-entry.js';
 
 /**
+ * Generates a color at a specific oklch lightness, bypassing the APCA contrast search. Used for
+ * very light colors that fall below APCA's loClip threshold (~Lc 7.3).
+ *
+ * @category Internal
+ */
+function generateColorAtLightness(
+    baseColor: Readonly<Color>,
+    {chromaScale, targetLightness}: Readonly<Pick<PaletteEntry, 'chromaScale' | 'targetLightness'>>,
+) {
+    const color = new Color(baseColor.hexString);
+    const baseHue = color.oklch.h;
+    const baseChroma = color.oklch.c;
+
+    color.set({
+        oklch: {
+            l: targetLightness,
+            c: baseChroma * chromaScale,
+            h: baseHue,
+        },
+    });
+
+    const contrast = calculateContrast({
+        foreground: color.hexString,
+        background: 'white',
+    });
+
+    return {
+        hexString: color.hexString,
+        contrast: Math.abs(contrast.contrast),
+    };
+}
+
+/**
  * Generates a color with the specified lightness that maintains the hue.
  *
  * @category Internal
@@ -132,7 +165,10 @@ export function generateColorPalette(
 
     return paletteEntries
         .map((paletteEntry): GeneratedPaletteSwatch => {
-            const {hexString, contrast} = generateColorAtContrast(baseColor, paletteEntry);
+            const {hexString, contrast} =
+                paletteEntry.targetLightness > 0
+                    ? generateColorAtLightness(baseColor, paletteEntry)
+                    : generateColorAtContrast(baseColor, paletteEntry);
 
             return {
                 levelKey: paletteEntry.levelKey,
